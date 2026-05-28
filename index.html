@@ -525,6 +525,28 @@
         }
     }
 
+    // --- SUBMIT SECRET SUBTOPIC ---
+    function submitSubtopic() {
+        const subtopic = document.getElementById("subtopic-input").value.trim();
+        if(!subtopic) return alert(currentLang === "sl" ? "Vpiši svojo skrito podtemo!" : "Enter your secret subtopic!");
+
+        // Skrijemo vnosno polje in gumb ter prikažemo napis za čakanje
+        document.getElementById("subtopic-input").style.display = "none";
+        document.querySelector("#screen-setup-subtopic button").style.display = "none";
+        document.getElementById("setup-wait-msg").style.display = "block";
+
+        let updates = {};
+        if(myRole === "host") {
+            updates[`/hostSubtopic`] = subtopic;
+            updates[`/hostReady`] = true;
+        } else {
+            updates[`/guestSubtopic`] = subtopic;
+            updates[`/guestReady`] = true;
+        }
+
+        roomRef.update(updates);
+    }
+
     // --- SUBMIT GUESSED ITEM ---
     function submitGuess() {
         const item = document.getElementById("guess-item-input").value.trim();

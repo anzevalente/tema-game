@@ -101,18 +101,36 @@
         <div class="game-info">
             <div style="font-size: 14px;" data-key="main-topic-label">Glavna tema</div>
             <b id="game-main-topic" style="font-size: 20px; color: var(--primary);"></b>
+            <!-- DODANO: Prikaz tvoje skrite podteme med igro -->
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+                Tvoja skrita podtema: <b id="game-my-subtopic-display" style="color: var(--warning);"></b>
+            </div>
         </div>
         
         <div id="turn-indicator" class="room-code-display" style="font-size:20px;">---</div>
 
-        <div class="lists-wrapper">
-            <div class="list-box">
-                <div class="list-title" style="color: var(--success);" data-key="correct-items">Pravilno (max 5):</div>
-                <div id="correct-items-container"></div>
+        <div class="lists-wrapper" style="flex-direction: column; gap: 15px;">
+            <!-- TVOJI POSKUSI -->
+            <div>
+                <h4 style="font-size: 14px; margin-bottom: 5px; color: var(--text-muted);">Moji poskusi (ugibam nasprotnikovo podtemo):</h4>
+                <div style="display: flex; gap: 10px;">
+                    <div class="list-box">
+                        <div class="list-title" style="color: var(--success);" data-key="correct-items">Pravilno (max 5):</div>
+                        <div id="correct-items-container"></div>
+                    </div>
+                    <div class="list-box">
+                        <div class="list-title" style="color: var(--danger);" data-key="wrong-items">Zgrešeno:</div>
+                        <div id="wrong-items-container"></div>
+                    </div>
+                </div>
             </div>
-            <div class="list-box">
-                <div class="list-title" style="color: var(--danger);" data-key="wrong-items">Zgrešeno:</div>
-                <div id="wrong-items-container"></div>
+
+            <!-- NASPROTNIKOVI POSKUSI -->
+            <div>
+                <h4 style="font-size: 14px; margin-bottom: 5px; color: var(--text-muted);">Nasprotnikovi poskusi (ugiba mojo podtemo):</h4>
+                <div class="list-box" style="min-height: 80px;">
+                    <div id="opponent-items-container"></div>
+                </div>
             </div>
         </div>
 
@@ -425,6 +443,8 @@
     function startGameplay(data) {
         showScreen("screen-game");
         document.getElementById("game-main-topic").innerText = data.mainTopic;
+        // DODANO: Izpis podteme pod glavno temo na vrhu
+        document.getElementById("game-my-subtopic-display").innerText = myRole === "host" ? data.hostSubtopic : data.guestSubtopic;
         document.getElementById("my-subtopic-reminder").innerText = myRole === "host" ? data.hostSubtopic : data.guestSubtopic;
         document.getElementById("my-subtopic-reminder-2").innerText = myRole === "host" ? data.hostSubtopic : data.guestSubtopic;
 
@@ -690,19 +710,19 @@
     function renderLists(listsObj) {
         const correctContainer = document.getElementById("correct-items-container");
         const wrongContainer = document.getElementById("wrong-items-container");
+        const opponentContainer = document.getElementById("opponent-items-container");
         
         correctContainer.innerHTML = "";
         wrongContainer.innerHTML = "";
+        opponentContainer.innerHTML = "";
 
-        // DODAN POPRAVEK: Če listsObj sploh še ne obstaja, ustvari prazen objekt, da koda ne crkne
         const safeListsObj = listsObj || {};
 
-        // Pridobimo sezname SAMO ZA MOJO VLOGO (Jaz vidim samo svoja ugibanja nasprotnika)
+        // 1. IZRIS TVOJIH POSKUSOV (Ostane nespremenjeno)
         const myLists = safeListsObj[myRole] || {};
         const myCorrect = myLists.correct || {};
         const myWrong = myLists.wrong || {};
 
-        // Izris pravilnih
         Object.values(myCorrect).forEach(text => {
             const div = document.createElement("div");
             div.className = "list-item";
@@ -710,13 +730,39 @@
             correctContainer.appendChild(div);
         });
 
-        // Izris zgrešenih
         Object.values(myWrong).forEach(text => {
             const div = document.createElement("div");
             div.className = "list-item";
             div.innerHTML = `<span style="color:var(--text-muted)">• ${text}</span> <span style="color:var(--danger)">✗</span>`;
             wrongContainer.appendChild(div);
         });
+
+        // 2. IZRIS NASPROTNIKOVIH POSKUSOV (Pravilni zgoraj s kljukico, napačni spodaj s križcem)
+        const opponentRole = myRole === "host" ? "guest" : "host";
+        const oppLists = safeListsObj[opponentRole] || {};
+        const oppCorrect = oppLists.correct || {};
+        const oppWrong = oppLists.wrong || {};
+
+        // Najprej izrišemo vse pravilne nasprotnikove zadetke (bodo na vrhu)
+        Object.values(oppCorrect).forEach(text => {
+            const div = document.createElement("div");
+            div.className = "list-item";
+            div.innerHTML = `<span style="color:#e5e7eb">• ${text}</span> <span style="color:var(--success)">✓</span>`;
+            opponentContainer.appendChild(div);
+        });
+
+        // Nato izrišemo še njegove zgrešene poskuse
+        Object.values(oppWrong).forEach(text => {
+            const div = document.createElement("div");
+            div.className = "list-item";
+            div.innerHTML = `<span style="color:var(--text-muted)">• ${text}</span> <span style="color:var(--danger)">✗</span>`;
+            opponentContainer.appendChild(div);
+        });
+
+        // Če nasprotnik še ni imel nobenega poskusa, izpišemo kratko obvestilo
+        if (Object.keys(oppCorrect).length === 0 && Object.keys(oppWrong).length === 0) {
+            opponentContainer.innerHTML = `<div class="status-msg" style="text-align:left; font-size:13px;">Nasprotnik še ni ugibal.</div>`;
+        }
     }
 
     // --- SAVE PROGRESS FOR FINISHED PLAYER ---

@@ -664,6 +664,7 @@
     }
 
     // --- RENDERING SEPARATE LISTS ---
+    // --- RENDERING SEPARATE LISTS ---
     function renderLists(listsObj) {
         const correctContainer = document.getElementById("correct-items-container");
         const wrongContainer = document.getElementById("wrong-items-container");
@@ -671,8 +672,11 @@
         correctContainer.innerHTML = "";
         wrongContainer.innerHTML = "";
 
+        // DODAN POPRAVEK: Če listsObj sploh še ne obstaja, ustvari prazen objekt, da koda ne crkne
+        const safeListsObj = listsObj || {};
+
         // Pridobimo sezname SAMO ZA MOJO VLOGO (Jaz vidim samo svoja ugibanja nasprotnika)
-        const myLists = listsObj[myRole] || {};
+        const myLists = safeListsObj[myRole] || {};
         const myCorrect = myLists.correct || {};
         const myWrong = myLists.wrong || {};
 
